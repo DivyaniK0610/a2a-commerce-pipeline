@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A2A Commerce Pipeline — Razorpay Buildathon</title>
+  <meta name="description" content="An autonomous Agent-to-Agent commerce system using ONDC/Beckn protocols, Groq AI, and Razorpay payments. Built for Razorpay Buildathon Track 1." />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Tailwind config (for any inline classes) -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { mono: ['JetBrains Mono', 'monospace'] }
+        }
+      }
+    };
+  </script>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── Top Header ─────────────────────────────────────────────────── -->
+  <header id="header">
+    <div id="header-left">
+      <span id="header-logo">⚡</span>
+      <div>
+        <div id="header-title">A2A Commerce Pipeline</div>
+        <div id="header-subtitle">ONDC · Groq AI · Razorpay — Buildathon Track 1</div>
+      </div>
+    </div>
+    <div id="header-right">
+      <div id="health-badge">
+        <div id="health-dot" title="Checking backend..."></div>
+        <span>Backend</span>
+      </div>
+      <button id="btn-audit-log" title="View immutable audit log">
+        📋 Audit Log
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Left: Consumer Chat Pane ──────────────────────────────────── -->
+  <section id="consumer-pane">
+    <div id="consumer-header">
+      <div id="consumer-avatar">🤖</div>
+      <div id="consumer-header-info">
+        <h2>ONDC Buyer Agent</h2>
+        <p>Powered by Groq · <span id="agent-status">Online</span></p>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-messages">
+      <!-- Messages injected by app.js -->
+      <div id="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div id="chat-input-area">
+      <!-- Quick Prompts -->
+      <div id="quick-prompts">
+        <button class="quick-prompt" onclick="useQuickPrompt('I need a mechanical keyboard')">⌨️ Keyboard</button>
+        <button class="quick-prompt" onclick="useQuickPrompt('Show me all available products')">📦 All Products</button>
+        <button class="quick-prompt" onclick="useQuickPrompt('I want to buy 500 monitor stands')">🖥️ Test Stock Error</button>
+        <button class="quick-prompt" onclick="useQuickPrompt('I need a webcam, please proceed with 1 unit. My name is Demo User, email demo@test.com, phone +911234567890')">💳 Full Purchase</button>
+      </div>
+
+      <form id="chat-form">
+        <textarea
+          id="chat-input"
+          placeholder="Ask the agent anything… (e.g. 'I need a keyboard')"
+          rows="1"
+          autocomplete="off"
+        ></textarea>
+        <button id="send-btn" type="submit" title="Send">
+          ➤
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ── Right: Developer Telemetry Pane ───────────────────────────── -->
+  <section id="telemetry-pane">
+    <div id="telemetry-header">
+      <div id="telemetry-header-left">
+        <div>
+          <h2>// Developer Telemetry</h2>
+          <p>Real-time ONDC API payloads · SSE stream</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="sse-status">
+          <div id="sse-dot"></div>
+          <span id="sse-status-text">CONNECTING</span>
+        </div>
+        <button id="btn-clear-tele">clear</button>
+      </div>
+    </div>
+
+    <!-- Telemetry Events -->
+    <div id="telemetry-log">
+      <!-- SSE events injected by app.js -->
+    </div>
+  </section>
+
+</div><!-- /#app -->
+
+<!-- ── Audit Log Modal ────────────────────────────────────────────── -->
+<div id="audit-modal-overlay">
+  <div id="audit-modal">
+    <div id="audit-modal-header">
+      <h3>📋 Immutable Audit Log — audit_logs table</h3>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span id="audit-count" style="font-size:11px;color:var(--tele-muted);font-family:'JetBrains Mono',monospace"></span>
+        <button id="audit-modal-close">&times;</button>
+      </div>
+    </div>
+    <div id="audit-modal-body">
+      <table id="audit-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Action</th>
+            <th>Status</th>
+            <th>Txn ID</th>
+            <th>Payload Preview</th>
+          </tr>
+        </thead>
+        <tbody id="audit-table-body">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── App JS ──────────────────────────────────────────────────────── -->
+<script src="app.js"></script>
+
+</body>
+</html>
