@@ -8,6 +8,8 @@
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css" />
 
@@ -29,7 +31,7 @@
   <!-- ── Top Header ─────────────────────────────────────────────────── -->
   <header id="header">
     <div id="header-left">
-      <span id="header-logo">⚡</span>
+      <span id="header-logo"><i data-lucide="zap" fill="currentColor"></i></span>
       <div>
         <div id="header-title">A2A Commerce Pipeline</div>
         <div id="header-subtitle">ONDC · Groq AI · Razorpay — Buildathon Track 1</div>
@@ -40,8 +42,8 @@
         <div id="health-dot" title="Checking backend..."></div>
         <span>Backend</span>
       </div>
-      <button id="btn-audit-log" title="View immutable audit log">
-        📋 Audit Log
+      <button id="btn-audit-log" title="View immutable audit log" style="display: flex; align-items: center; gap: 6px;">
+        <i data-lucide="clipboard-list" style="width: 16px; height: 16px;"></i> Audit Log
       </button>
     </div>
   </header>
@@ -49,7 +51,7 @@
   <!-- ── Left: Consumer Chat Pane ──────────────────────────────────── -->
   <section id="consumer-pane">
     <div id="consumer-header">
-      <div id="consumer-avatar">🤖</div>
+      <div id="consumer-avatar"><i data-lucide="bot"></i></div>
       <div id="consumer-header-info">
         <h2>ONDC Buyer Agent</h2>
         <p>Powered by Groq · <span id="agent-status">Online</span></p>
@@ -70,10 +72,10 @@
     <div id="chat-input-area">
       <!-- Quick Prompts -->
       <div id="quick-prompts">
-        <button class="quick-prompt" onclick="useQuickPrompt('I need a mechanical keyboard')">⌨️ Keyboard</button>
-        <button class="quick-prompt" onclick="useQuickPrompt('Show me all available products')">📦 All Products</button>
-        <button class="quick-prompt" onclick="useQuickPrompt('I want to buy 500 monitor stands')">🖥️ Test Stock Error</button>
-        <button class="quick-prompt" onclick="useQuickPrompt('I need a webcam, please proceed with 1 unit. My name is Demo User, email demo@test.com, phone +911234567890')">💳 Full Purchase</button>
+        <button class="quick-prompt" onclick="useQuickPrompt('I need a mechanical keyboard')"><i data-lucide="keyboard" style="width:14px;height:14px"></i> Keyboard</button>
+        <button class="quick-prompt" onclick="useQuickPrompt('Show me all available products')"><i data-lucide="package" style="width:14px;height:14px"></i> All Products</button>
+        <button class="quick-prompt" onclick="useQuickPrompt('I want to buy 500 monitor stands')"><i data-lucide="monitor" style="width:14px;height:14px"></i> Test Stock Error</button>
+        <button class="quick-prompt" onclick="useQuickPrompt('I need a webcam, please proceed with 1 unit. My name is Demo User, email demo@test.com, phone +911234567890')"><i data-lucide="credit-card" style="width:14px;height:14px"></i> Full Purchase</button>
       </div>
 
       <form id="chat-form">
@@ -83,8 +85,8 @@
           rows="1"
           autocomplete="off"
         ></textarea>
-        <button id="send-btn" type="submit" title="Send">
-          ➤
+        <button id="send-btn" type="submit" title="Send" style="display:flex;align-items:center;justify-content:center;">
+          <i data-lucide="send" style="width: 18px; height: 18px;"></i>
         </button>
       </form>
     </div>
@@ -120,7 +122,7 @@
 <div id="audit-modal-overlay">
   <div id="audit-modal">
     <div id="audit-modal-header">
-      <h3>📋 Immutable Audit Log — audit_logs table</h3>
+      <h3 style="display: flex; align-items: center; gap: 8px;"><i data-lucide="clipboard-list"></i> Immutable Audit Log — audit_logs table</h3>
       <div style="display:flex;align-items:center;gap:12px">
         <span id="audit-count" style="font-size:11px;color:var(--tele-muted);font-family:'JetBrains Mono',monospace"></span>
         <button id="audit-modal-close">&times;</button>
@@ -146,6 +148,10 @@
 
 <!-- ── App JS ──────────────────────────────────────────────────────── -->
 <script src="app.js"></script>
+<script>
+  // Initialize static icons
+  lucide.createIcons();
+</script>
 
 </body>
 </html>

@@ -73,6 +73,10 @@ TOOLS = [
                         "type": "integer",
                         "description": "The number of units the user wants to purchase",
                         "minimum": 1
+                    },
+                    "discount_request": {
+                        "type": "boolean",
+                        "description": "Set to true if the user asks for a discount or better price. The Merchant API will strictly evaluate it."
                     }
                 },
                 "required": ["item_id", "quantity"]
@@ -126,22 +130,27 @@ SYSTEM_PROMPT = """You are an autonomous ONDC Buyer Agent helping users purchase
 
 STRICT RULES — follow these exactly:
 1. To find products, ALWAYS call search_catalog first. Never invent product IDs or prices.
-2. To get a price quote, ALWAYS call select_item. Show the quote in this format:
-   📦 Item: [name] × [quantity]
-   💰 Base Price: ₹[base]
-   📊 GST (18%): ₹[gst]
-   ✅ Total: ₹[total]
+2. To get a price quote, ALWAYS call select_item. Show the quote in this format without emojis:
+   Item: [name] × [quantity]
+   Unit Price: ₹[unit]
+   Base Price: ₹[base]
+   GST (18%): ₹[gst]
+   Total: ₹[total]
    Then ask: "Shall I proceed? Please share your name, email, and phone number."
-3. PAYMENT TRIGGER — When the user provides their name AND email AND phone number in any message:
+3. NEGOTIATION — If the user asks for a discount, you cannot grant it yourself. You must call select_item with `discount_request: true`. The Merchant API will evaluate it. If a discount is granted, show the discount amount in the quote.
+4. PAYMENT TRIGGER — When the user provides their name AND email AND phone number in any message:
    - This is EXPLICIT CONFIRMATION to pay. Do NOT ask again.
    - Call search_catalog to get the item_id, then call select_item to confirm stock.
    - Then IMMEDIATELY call init_order with their details. No more questions.
-4. If select_item returns a stock error, tell the user the available stock and ask if they want that quantity.
-5. After init_order succeeds, show: 🔗 Payment Link: [short_url]
-6. Be concise and transparent about each step."""
+5. If select_item returns a stock error, tell the user the available stock and ask if they want that quantity.
+6. After init_order succeeds, show: Payment Link: [short_url]
+7. Be concise and transparent about each step."""
 
 
 # ── Tool Executor ─────────────────────────────────────────────────────────────
+
+def _get_agent_headers():
+    return {"X-Agent-Auth": os.getenv("A2A_AGENT_KEY", "")}
 
 def _execute_tool(tool_name: str, tool_args: dict) -> str:
     """Executes the appropriate ONDC HTTP call and returns the JSON response as string."""
@@ -154,10 +163,11 @@ def _execute_tool(tool_name: str, tool_args: dict) -> str:
         elif tool_name == "select_item":
             payload = {
                 "order": {
-                    "items": [{"id": tool_args["item_id"], "quantity": tool_args["quantity"]}]
+                    "items": [{"id": tool_args["item_id"], "quantity": tool_args["quantity"]}],
+                    "discount_request": tool_args.get("discount_request", False)
                 }
             }
-            resp = requests.post(f"{MERCHANT_API_BASE}/select", json=payload, timeout=10)
+            resp = requests.post(f"{MERCHANT_API_BASE}/select", json=payload, headers=_get_agent_headers(), timeout=10)
             return json.dumps(resp.json(), ensure_ascii=False)
 
         elif tool_name == "init_order":
@@ -168,9 +178,10 @@ def _execute_tool(tool_name: str, tool_args: dict) -> str:
                     "name": tool_args.get("customer_name", ""),
                     "email": tool_args.get("customer_email", ""),
                     "contact": tool_args.get("customer_contact", "")
-                }
+                },
+                "discount_request": tool_args.get("discount_request", False)
             }
-            resp = requests.post(f"{MERCHANT_API_BASE}/init", json=payload, timeout=15)
+            resp = requests.post(f"{MERCHANT_API_BASE}/init", json=payload, headers=_get_agent_headers(), timeout=15)
             return json.dumps(resp.json(), ensure_ascii=False)
 
         else:

@@ -4,6 +4,7 @@ A2A Commerce Pipeline | Razorpay Buildathon Track 1
 """
 
 import os
+import time
 import requests
 from dotenv import load_dotenv
 
@@ -58,12 +59,15 @@ def create_payment_link(amount_inr: float, description: str,
     Returns the full response dict — short_url contains the rzp.io link.
     """
     amount_paise = int(round(amount_inr * 100))
+    # We use 20 minutes (1200s) for the payment link TTL
+    expire_timestamp = int(time.time()) + 1200
 
     payload = {
         "amount": amount_paise,
         "currency": "INR",
         "accept_partial": False,
         "description": description,
+        "expire_by": expire_timestamp,
         "notify": {
             "sms": False,
             "email": bool(customer_email)

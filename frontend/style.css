@@ -548,6 +548,7 @@ html, body {
   border: 1px solid var(--tele-border);
   border-radius: var(--radius-sm);
   overflow: hidden;
+  flex-shrink: 0;
   animation: tele-in 0.2s ease-out;
 }
 

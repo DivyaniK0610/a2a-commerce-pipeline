@@ -138,7 +138,7 @@ function addTelemetryEvent(data) {
       <div class="tele-event-right">
         ${statusBadge}
         <span class="tele-time">${timestamp}</span>
-        <span class="tele-chevron">▶</span>
+        <span class="tele-chevron"><i data-lucide="chevron-right" style="width:14px;height:14px"></i></span>
       </div>
     </div>
     <div class="tele-event-body">
@@ -153,6 +153,10 @@ function addTelemetryEvent(data) {
   if (teleEventCount === 1 || ["ondc_search", "ondc_select", "ondc_init", "webhook_payment_paid"].includes(eventType)) {
     card.classList.add("expanded");
   }
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function getTeleTagInfo(eventType, data) {
@@ -162,7 +166,7 @@ function getTeleTagInfo(eventType, data) {
     "ondc_select":            { cls: "tag-select",   label: "SELECT",  name: data.endpoint || "/api/select" },
     "ondc_init":              { cls: "tag-init",     label: "INIT",    name: data.endpoint || "/api/init" },
     "razorpay_create":        { cls: "tag-razorpay", label: "RZRPAY",  name: "Razorpay Payment Link" },
-    "webhook_payment_paid":   { cls: "tag-webhook",  label: "WEBHOOK", name: "Payment Confirmed 🎉" },
+    "webhook_payment_paid":   { cls: "tag-webhook",  label: "WEBHOOK", name: "Payment Confirmed" },
     "agent_thinking":         { cls: "tag-agent",    label: "AGENT",   name: "Buyer Agent Processing" },
     "agent_response":         { cls: "tag-agent",    label: "AGENT",   name: "Buyer Agent Response" },
     "agent_error":            { cls: "tag-error",    label: "ERROR",   name: "Agent Error" },
@@ -173,15 +177,15 @@ function getTeleTagInfo(eventType, data) {
 function getTeleStatusBadge(eventType, data) {
   const status = data.status || "";
   if (status === "success" || eventType === "connected" || eventType === "agent_response") {
-    return `<span class="tele-status-badge status-success">✓ OK</span>`;
+    return `<span class="tele-status-badge status-success" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="check-circle-2" style="width:12px;height:12px"></i> OK</span>`;
   } else if (eventType === "webhook_payment_paid" || status === "payment_confirmed") {
-    return `<span class="tele-status-badge status-success">💳 PAID</span>`;
+    return `<span class="tele-status-badge status-success" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="credit-card" style="width:12px;height:12px"></i> PAID</span>`;
   } else if (status === "error" || status === "out_of_stock" || status === "not_found" || eventType === "agent_error") {
-    return `<span class="tele-status-badge status-error">✕ ERR</span>`;
+    return `<span class="tele-status-badge status-error" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="x-circle" style="width:12px;height:12px"></i> ERR</span>`;
   } else if (status === "calling_razorpay" || eventType === "agent_thinking") {
-    return `<span class="tele-status-badge status-pending">⟳ WAIT</span>`;
+    return `<span class="tele-status-badge status-pending" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="loader-2" style="width:12px;height:12px"></i> WAIT</span>`;
   } else {
-    return `<span class="tele-status-badge status-info">● INFO</span>`;
+    return `<span class="tele-status-badge status-info" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="info" style="width:12px;height:12px"></i> INFO</span>`;
   }
 }
 
@@ -259,7 +263,7 @@ function appendMessage(role, content, extras = {}) {
     btn.target = "_blank";
     btn.rel = "noopener noreferrer";
     btn.className = "payment-btn";
-    btn.innerHTML = `<span>🔐</span> Pay with Razorpay`;
+    btn.innerHTML = `<i data-lucide="lock" style="width:14px;height:14px;margin-right:6px;display:inline-block;vertical-align:-2px"></i> Pay with Razorpay`;
     wrap.insertBefore(btn, wrap.querySelector(".message-time"));
   }
 
@@ -267,6 +271,10 @@ function appendMessage(role, content, extras = {}) {
   // Re-append typing indicator at the end
   chatMessages.appendChild(typingIndicator);
   chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function parseMessageContent(text) {
@@ -276,15 +284,24 @@ function parseMessageContent(text) {
 
   // Extract quote data from structured text patterns
   let quoteData = null;
-  const baseMatch   = text.match(/Base Price[:\s]+₹?([\d,]+(?:\.\d{2})?)/i);
-  const gstMatch    = text.match(/GST[^:]*:[:\s]+₹?([\d,]+(?:\.\d{2})?)/i);
-  const totalMatch  = text.match(/Total[:\s]+₹?([\d,]+(?:\.\d{2})?)/i);
-  const itemMatch   = text.match(/Item[:\s]+([^\n]+)/i);
+  const unitMatch     = text.match(/Unit Price[:\s]+₹?([\d,]+(?:\.\d{2})?)/i);
+  const baseMatch     = text.match(/Base Price[:\s]+₹?([\d,]+(?:\.\d{2})?)/i);
+  const discountMatch = text.match(/Discount[:\s]+₹?([\d,]+(?:\.\d{2})?)/i);
+  const gstMatch      = text.match(/GST[^:]*:[:\s]+₹?([\d,]+(?:\.\d{2})?)/i);
+  const totalMatch    = text.match(/Total[:\s]+₹?([\d,]+(?:\.\d{2})?)/i);
+  const itemMatch     = text.match(/Item[:\s]+([^\n]+)/i);
 
   if (baseMatch && gstMatch && totalMatch) {
+    const itemStr = itemMatch ? itemMatch[1].trim() : "Item";
+    const qMatch = itemStr.match(/(?:x|×)\s*(\d+)$/i);
+    const quantity = qMatch ? parseInt(qMatch[1], 10) : 1;
+    const base = parseFloat(baseMatch[1].replace(/,/g, ""));
+
     quoteData = {
-      item: itemMatch ? itemMatch[1].trim() : "Item",
-      base: parseFloat(baseMatch[1].replace(/,/g, "")),
+      item: itemStr,
+      unit: unitMatch ? parseFloat(unitMatch[1].replace(/,/g, "")) : (base / quantity),
+      base: base,
+      discount: discountMatch ? parseFloat(discountMatch[1].replace(/,/g, "")) : 0,
       gst:  parseFloat(gstMatch[1].replace(/,/g, "")),
       total: parseFloat(totalMatch[1].replace(/,/g, ""))
     };
@@ -303,9 +320,14 @@ function parseMessageContent(text) {
 function buildQuoteCard(data) {
   const card = document.createElement("div");
   card.className = "quote-card";
-  card.innerHTML = `
-    <div class="quote-card-title">📋 Price Breakdown</div>
+  
+  let html = `
+    <div class="quote-card-title" style="display:flex;align-items:center;gap:6px;"><i data-lucide="receipt" style="width:14px;height:14px"></i> Price Breakdown</div>
     <div class="quote-row"><span>${escapeHtml(data.item)}</span></div>
+    <div class="quote-row">
+      <span>Unit Price</span>
+      <span>${formatCurrency(data.unit)}</span>
+    </div>
     <div class="quote-row">
       <span>Base Price</span>
       <span>${formatCurrency(data.base)}</span>
@@ -314,11 +336,25 @@ function buildQuoteCard(data) {
       <span>GST (18%)</span>
       <span>${formatCurrency(data.gst)}</span>
     </div>
+  `;
+
+  if (data.discount > 0) {
+    html += `
+    <div class="quote-row" style="color: var(--tele-green);">
+      <span>Discount</span>
+      <span>-${formatCurrency(data.discount)}</span>
+    </div>
+    `;
+  }
+
+  html += `
     <div class="quote-row total">
       <span>Total Payable</span>
       <span>${formatCurrency(data.total)}</span>
     </div>
   `;
+  
+  card.innerHTML = html;
   return card;
 }
 
@@ -361,7 +397,7 @@ async function sendMessage(text) {
     conversationHistory.push({ role: "assistant", content: reply });
 
   } catch (err) {
-    appendMessage("bot", `⚠️ Error: ${err.message}\n\nMake sure the Flask backend is running on port 5000.`);
+    appendMessage("bot", `Error: ${err.message}\n\nMake sure the Flask backend is running on port 5000.`);
     conversationHistory.push({ role: "assistant", content: `Error: ${err.message}` });
   } finally {
     setThinking(false);
@@ -462,7 +498,7 @@ document.addEventListener("keydown", (e) => {
 function init() {
   // Welcome message
   appendMessage("bot",
-    "👋 Hello! I'm your **ONDC Buyer Agent**, powered by Groq AI.\n\n" +
+    "Hello! I'm your **ONDC Buyer Agent**, powered by Groq AI.\n\n" +
     "I can help you browse and purchase products from the merchant catalog using real-time price quotes and Razorpay payments.\n\n" +
     "Try asking: *\"Show me available keyboards\"* or *\"I need a webcam\"*"
   );

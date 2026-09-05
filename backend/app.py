@@ -173,6 +173,13 @@ def ondc_select():
     body = request.get_json(force=True, silent=True) or {}
     txn_id = str(uuid.uuid4())
 
+    # ── Authentication ────────────────────────────────────────────────────────
+    agent_key = os.getenv("A2A_AGENT_KEY")
+    if agent_key and request.headers.get("X-Agent-Auth") != agent_key:
+        error_resp = {"error": {"type": "AUTH-ERROR", "code": "401", "message": "Unauthorized Agent"}}
+        log_action(txn_id, "beckn_select", body, "unauthorized")
+        return jsonify(error_resp), 401
+
     # Extract item and quantity
     try:
         order_item = body["order"]["items"][0]
@@ -228,10 +235,17 @@ def ondc_select():
         })
         return jsonify(error_resp), 422
 
-    # Calculate quote with 18% GST
+    # Calculate quote with 18% GST and optional bounded discount
+    discount_requested = body.get("order", {}).get("discount_request", False)
     base_price = round(item["price"] * quantity, 2)
     gst_amount = round(base_price * GST_RATE, 2)
-    total_price = round(base_price + gst_amount, 2)
+    discount_amount = 0.0
+
+    # Bounded Negotiation Rule: 5% discount on base price if cart > ₹5000 and requested
+    if discount_requested and base_price > 5000:
+        discount_amount = round(base_price * 0.05, 2)
+
+    total_price = round(base_price + gst_amount - discount_amount, 2)
     quote_id = str(uuid.uuid4())
 
     response_body = {
@@ -246,9 +260,11 @@ def ondc_select():
             "item_name": item["name"],
             "quantity": quantity,
             "price": {
+                "unit": item["price"],
                 "base": base_price,
                 "gst_rate": "18%",
                 "gst_18": gst_amount,
+                "discount": discount_amount,
                 "total": total_price,
                 "currency": "INR"
             },
@@ -277,6 +293,13 @@ def ondc_init():
     """
     body = request.get_json(force=True, silent=True) or {}
     txn_id = str(uuid.uuid4())
+
+    # ── Authentication ────────────────────────────────────────────────────────
+    agent_key = os.getenv("A2A_AGENT_KEY")
+    if agent_key and request.headers.get("X-Agent-Auth") != agent_key:
+        error_resp = {"error": {"type": "AUTH-ERROR", "code": "401", "message": "Unauthorized Agent"}}
+        log_action(txn_id, "beckn_init", body, "unauthorized")
+        return jsonify(error_resp), 401
 
     # Extract fields
     try:
@@ -322,10 +345,16 @@ def ondc_init():
         _broadcast_sse("ondc_init", {"endpoint": "/api/init", "request": body, "response": error_resp, "status": "out_of_stock"})
         return jsonify(error_resp), 422
 
-    # Calculate final amount with GST
+    # Re-calculate final amount with GST and optional discount (mirroring /select)
+    discount_requested = body.get("discount_request", False)
     base_price = round(item["price"] * quantity, 2)
     gst_amount = round(base_price * GST_RATE, 2)
-    total_price = round(base_price + gst_amount, 2)
+    discount_amount = 0.0
+
+    if discount_requested and base_price > 5000:
+        discount_amount = round(base_price * 0.05, 2)
+
+    total_price = round(base_price + gst_amount - discount_amount, 2)
 
     # ── Create Razorpay Payment Link ───────────────────────────────────────
     try:
